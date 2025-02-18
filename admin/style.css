@@ -1,0 +1,123 @@
+ /* General Page Styling */
+ body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Container */
+.container {
+    width: 98%;
+    margin: auto;
+    background: #252540;
+    padding: 20px 0;
+    border-radius: 10px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    direction: rtl;
+    display: flex;
+    position: relative;
+}
+img{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    position: absolute;
+    left: 5px;
+    top:5px;
+}
+.navbar{
+    list-style-type: none;
+    width: 50%;
+    margin: 0 30px;
+    padding: 0;
+    overflow: hidden;
+    justify-content: space-between;
+    display: flex;
+}
+.navbar li a{
+    color: aliceblue;
+    text-decoration: none;
+}
+/* Form Styling */
+form {
+    background: #2f2f50;
+    padding: 20px;
+    width: 60%;
+    margin: 20px auto;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+#searchForm , #addUserForm{
+    display: none;
+}
+input, select, button {
+    width: 90%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+    transition: 0.3s;
+}
+
+input, select {
+    background: #3a3a5c;
+    color: #ffffff;
+    border: 1px solid #57577d;
+}
+
+input:focus, select:focus {
+    border-color: #5a9cff;
+}
+
+/* Button Styling */
+button {
+    background: #5a9cff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #4a8de6;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background: #2f2f50;
+    color: #ffffff;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #444464;
+    text-align: center;
+}
+
+th {
+    background: #5a9cff;
+    color: white;
+}
+
+td {
+    background: #3a3a5c;
+}
+
+/* Delete Button */
+button.delete-btn {
+    background-color: #ff4f4f;
+}
+
+button.delete-btn:hover {
+    background-color: #d94545;
+}
