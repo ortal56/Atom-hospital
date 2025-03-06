@@ -5,6 +5,7 @@ $(document).ready(function() {
     $(".Users_List").hide();
     $(".pation").hide();
     $(".doctorAssist").hide();
+    $(".archive").hide();
 });
 
 $("a[href='#Home']").click(function(event) {
@@ -15,6 +16,7 @@ $("a[href='#Home']").click(function(event) {
     $(".Users_List").hide();
     $(".pation").hide();
     $(".doctorAssist").hide();
+    $(".archive").hide();
 });
 
 $("a[href='#Users_List']").click(function(event) {
@@ -24,7 +26,13 @@ $("a[href='#Users_List']").click(function(event) {
     $(".Users_List").show();
     $(".pation").hide();
     $(".home").hide();
+    $(".archive").hide();
     $(".doctorAssist").hide();
+    $.post("admin.php", {action: "get_users"}, function (response) {
+        response = JSON.parse(response)
+        updateTable(response, 'UsersList');
+        
+    })
 });
 
 $("a[href='#addUserForm']").click(function(event) {
@@ -35,6 +43,7 @@ $("a[href='#addUserForm']").click(function(event) {
     $(".pation").hide();
     $(".home").hide();
     $(".doctorAssist").hide();
+    $(".archive").hide();
 });
 
 $("a[href='#searchForm']").click(function(event) {
@@ -45,6 +54,19 @@ $("a[href='#searchForm']").click(function(event) {
     $(".pation").hide();
     $(".home").hide();
     $(".doctorAssist").hide();
+    $(".archive").hide();
+});
+
+$("a[href='#archive']").click(function(event) {
+    event.preventDefault();
+    $(".addUserForm").hide();
+    $(".searchForm").hide();
+    $(".Users_List").hide();
+    $(".pation").hide();
+    $(".home").hide();
+    $(".doctorAssist").hide();
+    $(".archive").show();
+    archive()
 });
 
 $("a[href='#pation']").click(function(event) {
@@ -55,6 +77,8 @@ $("a[href='#pation']").click(function(event) {
     $(".pation").show();
     $(".home").hide();
     $(".doctorAssist").hide();
+    $(".archive").hide();
+    get_pation();
 });
 $("a[href='#doctorAssist']").click(function(event) {
     event.preventDefault();
@@ -64,12 +88,18 @@ $("a[href='#doctorAssist']").click(function(event) {
     $(".pation").hide();
     $(".home").hide();
     $(".doctorAssist").show();
+    $(".archive").hide();
     getopt();
+    getAssist()
 });
+
 function togglePassword(id, btn) {
-    const password = document.getElementById(`password-${id}`);
-    password.style.display = password.style.display === 'none' ? 'inline' : 'none';
-    btn.style.display = btn.style.display === 'none' ? 'inline' : 'none';
+    $.post("admin.php", {action: "get_password", id: id}, function(response) {
+        response = JSON.parse(response);
+        $("#"+btn.id).hide()
+        document.getElementById("show"+btn.id).innerHTML = response.pass;
+    })
+    
 }
 
 $("#addUserForm").submit(function(event) {
@@ -79,37 +109,58 @@ $("#addUserForm").submit(function(event) {
         name: $("#name").val(),
         password: $("#password").val(),
         status: $("#status").val(),
-        role: $("#role").val(),
-        csrf_token: $('input[name="csrf_token"]').val()
+        role: $("#role").val()
     }, function(response) {
         Swal.fire({
             title: "User was added",
             text: $("#name").val(),
             icon: "success"
         });
+        $("#addUserForm")[0].reset();
     });
 });
 
-$("#searchForm").submit(function(event) {
-    event.preventDefault();
-    $.post("admin.php", {
-        action: "search",
-        name: $("#searchName").val(),
-        status: $("#searchStatus").val(),
-        role: $("#searchRole").val(),
-        csrf_token: $('input[name="csrf_token"]').val()
-    }, function(response) {
-        const users = JSON.parse(response);
-        updateTable(users);
-    });
-});
 
 function deleteUser(id) {
-    if (confirm("Are you sure you want to delete this user?")) {
-        $.post("admin.php", { action: "delete", id: id, csrf_token: $('input[name="csrf_token"]').val() }, function(response) {
-            location.reload();
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'You won’t be able to revert this!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post("admin.php", { action: "delete", id: id }, function(response) {
+                try {
+                    const data = JSON.parse(response);
+                    if (data.success) {
+                        updateTable(JSON.parse(data.massege), "UsersList");
+                    Swal.fire(
+                        'Deleted!',
+                        'The user has been deleted.',
+                        'success'
+                    );} else {
+                        Swal.fire(
+                            'Error!',
+                            'An error occurred while deleting the user.',
+                            'error'
+                        );
+                    }
+                } catch (e) {
+                    console.error("Invalid JSON response", e);
+                    Swal.fire(
+                        'Error!',
+                        'An error occurred while deleting the user.',
+                        'error'
+                    );
+                }
+            });
+
+
+        }
+    });
 }
 
 async function editUser(id, name, status, role) {
@@ -137,56 +188,95 @@ async function editUser(id, name, status, role) {
                 id: id,
                 name: newName,
                 status: newStatus,
-                role: newRole,
-                csrf_token: $('input[name="csrf_token"]').val()
+                role: newRole
             }, function(response) {
-                Swal.fire({
-                    title: "Details updated successfully!",
-                    icon: "success"
+                const data = JSON.parse(response);
+                    if (data.success) {
+                        updateTable(JSON.parse(data.massege), "UsersList");
+                        Swal.fire({
+                            title: "Details updated successfully!",
+                            icon: "success"
                 });
-            });
+            }else{
+                Swal.fire({
+                    title: "Error!",
+                    text: "An error occurred while updating the details.",
+                    icon: "error"
+                });
+            }
+        });
         }
     }
 }
 
-function updateTable(users) {
-    const tableBody = $(".uptodate");
-    tableBody.empty();
-    tableBody.append(
-        `
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Role</th>
-            <th>Actions</th>
-        </tr>
-        `
-    )
-    users.forEach(user => {
-        const row = `<tr>
-            <td>${user.id}</td>
-            <td>${user.name}</td>
-            <td>${user.status}</td>
-            <td>${user.role}</td>
-            <td>
-                <button onclick="editUser(${user.id}, '${user.name}', '${user.status}', '${user.role}')">Edit</button>
-                <button onclick="deleteUser(${user.id})">Delete</button>
-            </td>
-        </tr>`;
-        tableBody.append(row);
+$("#searchForm").submit(function(event) {
+    event.preventDefault();
+    $.post("admin.php", {
+        action: "search",
+        name: $("#searchName").val(),
+        status: $("#searchStatus").val(),
+        role: $("#searchRole").val()
+    }, function(response) {
+        const users = JSON.parse(response);
+        updateTable(users,"searchResult");
+    });
+});
+
+
+function get_pation(){
+    $.post("admin.php", { action: "get_pation" }, function(response) {
+        let data = JSON.parse(response);
+        updateTable(data,"pationTable");
     });
 }
 
 function deletepation(id) {
-    if (confirm("Are you sure you want to delete this user?")) {
-        $.post("admin.php", { action: "deletepation", id: id, csrf_token: $('input[name="csrf_token"]').val() }, function(response) {
-            location.reload();
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you really want to delete this user?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post("admin.php", { action: "deletepation", id: id }, function(response) {
+                const data = JSON.parse(response);
+                    if (data.success) {
+                        updateTable(JSON.parse(data.massege), "pationTable");
+                    Swal.fire(
+                        'Deleted!',
+                        'The user has been deleted.',
+                        'success'
+                    );} else {
+                        Swal.fire(
+                            'Error!',
+                            'An error occurred while deleting the user.',
+                            'error'
+                        );
+                    }
+            }).fail(function() {
+                Swal.fire(
+                    'Error!',
+                    'There was an issue deleting the user.',
+                    'error'
+                );
+            });
+        }
+    });
 }
+
 function getopt() {
-    $.post("admin.php", { action: "getassist", csrf_token: $('input[name="csrf_token"]').val() }, function(response) {
+    $("#Doctor_name").empty();
+    $("#Doctor_name").append(`
+        <option value="" disabled selected>Select Doctor</option>
+    `);
+    $("#assist_name").empty();
+    $("#assist_name").append(`
+        <option value="" disabled selected>Select Assist name</option>>
+    `);
+    $.post("admin.php", { action: "getassist" }, function(response) {
         let data = JSON.parse(response);
         for(let i = 0; i < data.length; i++) {
             if(data[i].role === "Doctor"){
@@ -202,22 +292,29 @@ function getopt() {
     });
 }
 
+function getAssist(){
+    $.post("admin.php", { action: "get_assist" }, function(response) {
+        let data = JSON.parse(response);
+            updateTable(data,"assistTable");
+    });
+}
+
 $("#addassist").submit(function(event) {
     event.preventDefault();
     $.post("admin.php", {
         action: "addassist",
         Doctor_name: $("#Doctor_name").val(),
-        assist_name: $("#assist_name").val(),
-        csrf_token: $('input[name="csrf_token"]').val()
+        assist_name: $("#assist_name").val()
     }, function(response) {
-        if(response === "Assistance added successfully!") {
+        response = JSON.parse(response);
+        if(response.success) {
             Swal.fire({
                 title: "Doctor Assistant was added",
                 text: $("#assistName").val(),
                 icon: "success"
             });
             setTimeout(() => {
-                location.reload();
+                updateTable(JSON.parse(response.mas),"assistTable");
             },1000)
         } else {
             Swal.fire({
@@ -229,27 +326,122 @@ $("#addassist").submit(function(event) {
 });
 
 function deleteAssist(id) {
-    if (confirm("Are you sure you want to remove this assistant?")) {
-        $.post("admin.php", {
-            action: "removeAssist",
-            id: id,
-            csrf_token: $('input[name="csrf_token"]').val()
-        }, function(response) {
-            if(response === "Assistance removed successfully!") {
-                Swal.fire({
-                    title: "Doctor Assistant was removed",
-                    icon: "success"
-                });
-                setTimeout(() => {
-                    location.reload();
-                },1000)
-                
-            } else {
-                Swal.fire({
-                    title: "Error removing Doctor Assistant",
-                    icon: "error"
-                });
-            }
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to remove this assistant?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, remove it!",
+        cancelButtonText: "Cancel",
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post("admin.php", { action: "removeAssist", id: id }, function(response) {
+                try {
+                    let data = JSON.parse(response);
+                    if (data.success) {
+                        Swal.fire("Success", "Doctor Assistant was removed", "success");
+                        updateTable(data.mas, "assistTable"); // Directly update the table
+                    } else {
+                        Swal.fire("Error", "Error removing Doctor Assistant", "error");
+                    }
+                } catch (e) {
+                    Swal.fire("Error", "Invalid server response", "error");
+                    console.error("Response parsing error:", e);
+                }
+            }).fail(function() {
+                Swal.fire("Error", "Failed to communicate with the server", "error");
+            });
+        }
+    });
+}
+
+function archive(){
+    $.post("admin.php", { action: "archive" }, function(response) {
+        response = JSON.parse(response);
+        updateTable(response, "archiveTable");
+    })
+}
+
+function updateTable(users, tableId) {
+    let table = document.getElementById(tableId);
+    table.innerHTML = '';
+    if(tableId == 'UsersList'){
+        users.forEach(user => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.status}</td>
+            <td>${user.role}</td>
+            <td><button id="${user.id}" onclick='togglePassword(${user.id},this)'>show password</button>
+            <span id="show${user.id}"></span>
+            <td>
+            <button onclick="editUser(${user.id}, '${user.name}', '${user.status}', '${user.role}')">Edit</button>
+            <button onclick="deleteUser(${user.id})">Delete</button></td>
+            `;
+            table.appendChild(row);
+        });
+    }else if(tableId == 'searchResult'){
+        users.forEach(user => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.status}</td>
+            <td>${user.role}</td>
+            <td><button id="${user.id}" onclick='togglePassword(${user.id},this)'>show password</button>
+            <span id="show${user.id}"></span>
+            <td>
+            <button onclick="editUser(${user.id}, '${user.name}', '${user.status}', '${user.role}')">Edit</button>
+            <button onclick="deleteUser(${user.id})">Delete</button></td>
+            `;
+            table.appendChild(row);
+        });
+    }else if(tableId == 'pationTable'){
+        users.forEach(patient => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${patient.name}</td>
+            <td>${patient.age}</td>
+            <td>${patient.patient_gender}</td>
+            <td>${patient.condition}</td>
+            <td>${patient.phone_number}</td>
+            <td>${patient.doctor_name}</td>
+            <td>${patient.created_at}</td>
+            <td>${patient.room}</td>
+            <td><button class='delete-btn' onclick="deletepation(${patient.id})">Delete</button></td>
+            `;
+            table.appendChild(row);
+        });
+
+    }else if(tableId == 'assistTable'){
+        users.forEach(assist => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${assist.name_doctor}</td>
+            <td>${assist.name_assist}</td>
+            <td><button class='delete-btn' onclick="deleteAssist(${assist.id})">Delete</button></td>
+            `
+            table.appendChild(row);
+        });
+    }else if(tableId == 'archiveTable'){
+        users.forEach(patient => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${patient.id}</td>
+            <td>${patient.name}</td>
+            <td>${patient.age}</td>
+            <td>${patient.patient_gender}</td>
+            <td>${patient.condition}</td>
+            <td>${patient.phone_number}</td>
+            <td>${patient.doctor_name}</td>
+            <td>${patient.created_at}</td>
+            <td>${patient.room}</td>
+            <td>${patient.end_at}</td>
+            <td>${patient.statu}</td>
+            `;
+            table.appendChild(row);
         });
     }
 }
