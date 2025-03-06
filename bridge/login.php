@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $db = new SQLite3('../database/users.db');
 
         // Check if user exists
-        $stmt = $db->prepare('SELECT password, role FROM users WHERE name = :name');
+        $stmt = $db->prepare('SELECT name,password,password_hash, role,Status FROM users WHERE name = :name');
         $stmt->bindValue(':name', $name, SQLITE3_TEXT);
         $result = $stmt->execute();
         $user = $result->fetchArray(SQLITE3_ASSOC);
@@ -24,25 +24,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             elseif($user['role'] == 'Doctor'){
                 return "workspace/patient.html";
             }
-            elseif($user['role'] == 'Doctor assist'){
-                return "workspace/patient.html";
+            elseif($user['role'] == 'Doctor_assist'){
+                return "workspace/assistpatient.html";
             }
             elseif($user['role'] == 'Nurse'){
-                return "workspace/patient.html";
+                return "workspace/nurse.html";
             }
             elseif($user['role'] == 'receptionist'){
-                return "workspace/receptionist.php";
-            }else{
+                return "workspace/receptionist.html";
+            }
+            elseif($user['role'] == 'laboratory'){
+                return "workspace/laboratory.html";
+            } else {
                 return "index.html";    
             }
         }
 
-        if ($user && $password == $user['password']) {
+        if ($user && $password == $user['password'] && $user['status'] == 'Active'){  // Check password and status{
             echo json_encode([
+                "Name" => $user["name"],
                 "password" => $password,
+                "role" => $user["role"],
+                "password_hash" => $user['password_hash'],
                 "dir" => get_role($user)
             ]);
-        } else {
+        }else if($user && $password == $user['password'] && $user['status'] == 'inactive'){
+            echo 'account_inactive';
+        }
+        else {
             echo "Invalid username or password.";
         }
 

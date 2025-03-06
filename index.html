@@ -164,14 +164,22 @@
                     data = data;
                 }
                 if(data.password === $("#password").val()) {
-                    console.log(data);
                     $("#chacker").css("color", "#28a745").attr("class", "fa fa-check");
+                    delete data.password;
+                    localStorage.setItem("token",JSON.stringify(data))
                     setTimeout(() => {
                         window.location.href = data.dir;
                     }, 2000);
                 }else if(data === "Invalid username or password."){
                     $("#chacker").css("color", "#dc3545").attr("class", "fa fa-close");
                 } 
+                else if(data === "account_inactive") {
+                    $("#chacker").css("color", "#dc3545").attr("class", "fa fa-close");
+                    setTimeout(() => {
+                        alert("Your account is inactive. Please contact the hospital administrator.");
+                    }, 500);
+                    
+                }
                 else { 
                     $("#chacker").css("color", "#dc3545").attr("class", "fa fa-close");
                 }
